@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "extbrst"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.7.1,<4.0"
+jax = "^0.2.9"
+jaxlib = "^0.1.61"
+pandas = "^1.2.1"
+nptyping = "^1.4.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+python-language-server = {extras = ["all"], version = "^0.36.2"}
+isort = "^5.7.0"
+pyflakes = "^2.2.0"
+pycodestyle = "^2.6.0"
+yapf = "^0.30.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
