@@ -6,6 +6,7 @@ import pandas as pd
 import math
 
 # calcurate expected free energy
+# code from https://github.com/dimarkov/aibandits
 def G(alpha_t, beta_t, alpha):
     nu_t = alpha_t + beta_t
     mu_t = alpha_t / nu_t
