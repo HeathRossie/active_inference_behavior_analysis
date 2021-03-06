@@ -1,0 +1,7 @@
+/*.egg-info
+/poetry.lock
+/.venv
+__pycache__/
+/.vim
+/figs
+/data
