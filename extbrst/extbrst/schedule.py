@@ -5,14 +5,18 @@ import numpy as np
 import scipy.stats as st
 from nptyping import NDArray
 
+from extbrst.types import (Action, Duration, Interval, NumberOfReward,
+                           RequiredResponse, Reward)
 from extbrst.util import randomize
 
 
-def _exp_rng(mean: float, n: int, _min: float) -> NDArray[1, float]:
+def _exp_rng(mean: Interval, n: NumberOfReward,
+             _min: Interval) -> NDArray[1, Interval]:
     return st.expon.ppf(np.linspace(0.01, 0.99, n), scale=mean, loc=_min)
 
 
-def _geom_rng(mean: float, n: int, _min: float) -> NDArray[1, float]:
+def _geom_rng(mean: RequiredResponse, n: NumberOfReward,
+              _min: RequiredResponse) -> NDArray[1, RequiredResponse]:
     return st.geom.ppf(np.linspace(0.01, 0.99, n),
                        p=1 / (mean - _min),
                        loc=_min)
@@ -25,7 +29,7 @@ class Schedule(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def config(self, val: float, n: int, _min: float):
+    def config(self, val: float, n: NumberOfReward, _min: float):
         pass
 
     @abstractmethod
@@ -62,7 +66,7 @@ class Schedule(metaclass=ABCMeta):
 
 
 class VariableInterval(Schedule):
-    def __init__(self, val: float, n: int, _min: float):
+    def __init__(self, val: Interval, n: NumberOfReward, _min: Interval):
         self.__val = val
         self.__min = _min
         self.__n = n
@@ -71,7 +75,7 @@ class VariableInterval(Schedule):
         self.__interval = self.__intervals[self.__count]
         self.__repeat = False
 
-    def config(self, val: float, n: int, _min: float):
+    def config(self, val: Interval, n: NumberOfReward, _min: float):
         self.__val = val
         self.__min = _min
         self.__n = n
@@ -79,7 +83,7 @@ class VariableInterval(Schedule):
         self.__intervals = randomize(_exp_rng(val, n, _min))
         self.__interval = self.__intervals[self.__count]
 
-    def step(self, count: float, action: int) -> int:
+    def step(self, count: Interval, action: Action) -> int:
         self.__interval -= count
         if self.__interval <= 0. and action == 1:
             self.__count += 1
@@ -105,15 +109,15 @@ class VariableInterval(Schedule):
         self.__repeat = False
 
     @property
-    def val(self) -> float:
+    def val(self) -> Interval:
         return self.__val
 
     @property
-    def n(self) -> int:
+    def n(self) -> NumberOfReward:
         return self.__n
 
     @property
-    def vals(self) -> NDArray[1, float]:
+    def vals(self) -> NDArray[1, Interval]:
         return self.__intervals
 
     @property
@@ -122,7 +126,8 @@ class VariableInterval(Schedule):
 
 
 class VariableRatio(Schedule):
-    def __init__(self, val: float, n: int, _min: float):
+    def __init__(self, val: RequiredResponse, n: NumberOfReward,
+                 _min: RequiredResponse):
         self.__val = val
         self.__min = _min
         self.__n = n
@@ -131,7 +136,7 @@ class VariableRatio(Schedule):
         self.__response = self.__responses[self.__count]
         self.__repeat = False
 
-    def config(self, val: float, n: int, _min: float):
+    def config(self, val: RequiredResponse, n: NumberOfReward, _min: float):
         self.__val = val
         self.__min = _min
         self.__n = n
@@ -139,7 +144,7 @@ class VariableRatio(Schedule):
         self.__responses = randomize(_geom_rng(val, n, _min))
         self.__response = self.__responses[self.__count]
 
-    def step(self, count: int, action: int) -> int:
+    def step(self, count: Action, action: Action) -> int:
         self.__response -= count
         if self.__response <= 0 and action == 1:
             self.__count += 1
@@ -165,15 +170,15 @@ class VariableRatio(Schedule):
         self.__repeat = False
 
     @property
-    def val(self) -> float:
+    def val(self) -> RequiredResponse:
         return self.__val
 
     @property
-    def n(self) -> int:
+    def n(self) -> NumberOfReward:
         return self.__n
 
     @property
-    def vals(self) -> NDArray[1, float]:
+    def vals(self) -> NDArray[1, RequiredResponse]:
         return self.__responses
 
     @property
@@ -187,11 +192,11 @@ class Extinction(Schedule):
         self.__count = 0
         self.__repeat = False
 
-    def config(self, val: float, n: int = 0, _min: float = 0):
+    def config(self, val: Duration, n: NumberOfReward = 0, _min: Duration = 0):
         _, _ = n, _min
         self.__val = val
 
-    def step(self, count: float, action: int) -> int:
+    def step(self, count: Interval, action: Action) -> int:
         _ = action
         self.__count += count
         return 0
@@ -211,7 +216,7 @@ class Extinction(Schedule):
         self.__repeat = False
 
     @property
-    def val(self) -> float:
+    def val(self) -> Duration:
         return self.__val
 
     @property
@@ -237,7 +242,7 @@ class ConcurrentSchedule(Schedule):
             self.__schedules[i].config(val[i], n[i], _min[i])
 
     def step(self, count: Sequence, action: Sequence) -> NDArray[1, int]:
-        rewards: NDArray[1, int] = np.zeros(len(self.__schedules))
+        rewards: NDArray[1, Reward] = np.zeros(len(self.__schedules))
         for i in range(len(self.__schedules)):
             rew = self.__schedules[i].step(count[i], action[i])
             rewards[i] = rew

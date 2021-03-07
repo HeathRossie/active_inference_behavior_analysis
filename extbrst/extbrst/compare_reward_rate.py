@@ -5,13 +5,15 @@ import numpy as np
 from extbrst.model import Action, Agent, Prediction, Probability, Reward
 from extbrst.schedule import (ConcurrentSchedule, Extinction, VariableInterval,
                               VariableRatio)
+from extbrst.types import (Duration, Interval, NumberOfOptions, NumberOfReward,
+                           RequiredResponse)
 
-NumberOfTrial = int
 Result = Tuple[Action, Reward, Prediction, Probability]
 OutputData = Tuple[Probability, Action, Reward, Prediction, Probability]
 
 
-def run_baseline(agent: Agent, schedule: ConcurrentSchedule, timestep: float):
+def run_baseline(agent: Agent, schedule: ConcurrentSchedule,
+                 timestep: Interval):
     def trial_process(agent: Agent, schedule: ConcurrentSchedule,
                       timestep: float) -> Result:
         preds = agent.predict()
@@ -31,11 +33,11 @@ def run_baseline(agent: Agent, schedule: ConcurrentSchedule, timestep: float):
 
 
 def run_extinction(agent: Agent, schedule: ConcurrentSchedule,
-                   timestep: float):
+                   timestep: Interval):
     counts = [timestep for _ in range(len(schedule.val))]
 
     def trial_process(agent: Agent, schedule: ConcurrentSchedule,
-                      timestep: float) -> Result:
+                      timestep: Interval) -> Result:
         preds = agent.predict()
         probs = agent.calculate_response_probs(-preds)
         actions = agent.choose_action(probs)
@@ -56,11 +58,11 @@ if __name__ == '__main__':
     from extbrst.model import GAIAgent
     from extbrst.util import get_nth_ancestor
 
-    requirements: List[Probability] = [1 + 1e-8]
+    requirements: List[RequiredResponse] = [1 + 1e-8]
     extinction: Probability = 0.
-    baseline_lenght: NumberOfTrial = 500
-    extinction_lenght: NumberOfTrial = 3600
-    num_alt = 10
+    baseline_lenght: NumberOfReward = 500
+    extinction_lenght: Duration = 3600
+    num_alt: NumberOfOptions = 10
 
     results: List[List[OutputData]] = []
     # run simulations for each VR schedule

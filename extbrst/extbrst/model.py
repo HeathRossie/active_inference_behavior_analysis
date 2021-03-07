@@ -4,11 +4,8 @@ import numpy as np
 from nptyping import NDArray
 from scipy.special import betaln, digamma
 
-Prediction = float
-Probability = float
-Action = int
-Reward = int
-NumberOfOptions = int
+from extbrst.types import (Action, NumberOfOptions, Prediction, Probability,
+                           Reward)
 
 
 class Agent(metaclass=ABCMeta):
