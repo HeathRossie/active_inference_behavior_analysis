@@ -12,7 +12,8 @@ NumberOfOptions = int
 
 
 class Agent(metaclass=ABCMeta):
-    def update(self, reward: Reward, action: Action):
+    # TODO: parameterize the learning rate
+    def update(self, reward: NDArray[1, Reward], action: NDArray[1, Action]):
         pass
 
     def predict(self) -> NDArray[1, Prediction]:
@@ -22,7 +23,8 @@ class Agent(metaclass=ABCMeta):
             self, pred: NDArray[1, Prediction]) -> NDArray[1, Probability]:
         pass
 
-    def choose_action(self, prob: NDArray[1, Probability]) -> Action:
+    def choose_action(self, prob: NDArray[1,
+                                          Probability]) -> NDArray[1, Action]:
         return 0
 
 
@@ -33,9 +35,9 @@ class GAIAgent(Agent):
         self.__beta_t = np.ones(k)
         self.__k = k
 
-    def update(self, reward: Reward, action: Action):
-        self.__alpha_t[action] += reward
-        self.__beta_t[action] += (1 - reward)
+    def update(self, reward: NDArray[1, Reward], action: NDArray[1, Action]):
+        self.__alpha_t += reward * action * 0.1
+        self.__beta_t += (1 - reward) * action * 0.1
 
     def predict(self) -> NDArray[1, Prediction]:
         nu_t = self.__alpha_t + self.__beta_t
@@ -55,8 +57,10 @@ class GAIAgent(Agent):
         pexp = np.exp(preds - pmax)
         return pexp / np.sum(pexp)
 
-    def choose_action(self, probs: NDArray[1, Probability]) -> Action:
-        return np.random.choice(self.__k, p=probs)
+    def choose_action(self, probs: NDArray[1,
+                                           Probability]) -> NDArray[1, Action]:
+        act = np.random.choice(self.__k, p=probs)
+        return np.identity(self.__k)[act]
 
 
 class SAIAgent(Agent):
@@ -67,8 +71,8 @@ class SAIAgent(Agent):
         self.__k = k
 
     def update(self, reward: Reward, action: Action):
-        self.__alpha_t[action] += reward
-        self.__beta_t[action] += (1 - reward)
+        self.__alpha_t += reward * action * 0.1
+        self.__beta_t[action] = (1 - reward) * action * 0.1
 
     def predict(self) -> NDArray[1, Prediction]:
         nu_t = self.__alpha_t + self.__beta_t
@@ -88,5 +92,7 @@ class SAIAgent(Agent):
         pexp = np.exp(preds - pmax)
         return pexp / np.sum(pexp)
 
-    def choose_action(self, probs: NDArray[1, Probability]) -> Action:
-        return np.random.choice(self.__k, p=probs)
+    def choose_action(self, probs: NDArray[1,
+                                           Probability]) -> NDArray[1, Action]:
+        act = np.random.choice(self.__k, p=probs)
+        return np.identity(self.__k)[act]

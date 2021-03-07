@@ -3,27 +3,51 @@ from typing import List, Tuple
 import numpy as np
 
 from extbrst.model import Action, Agent, Prediction, Probability, Reward
+from extbrst.schedule import (ConcurrentSchedule, Extinction, VariableInterval,
+                              VariableRatio)
 
 NumberOfTrial = int
 Result = Tuple[Action, Reward, Prediction, Probability]
 OutputData = Tuple[Probability, Action, Reward, Prediction, Probability]
 
 
-def reward_function(prob: Probability) -> Reward:
-    return int(np.random.uniform() < prob)
+def run_baseline(agent: Agent, schedule: ConcurrentSchedule, timestep: float):
+    def trial_process(agent: Agent, schedule: ConcurrentSchedule,
+                      timestep: float) -> Result:
+        preds = agent.predict()
+        probs = agent.calculate_response_probs(-preds)
+        actions = agent.choose_action(probs)
+        counts = actions.copy().tolist()
+        counts[1] = timestep
+        rewards = schedule.step(counts, actions.tolist())
+        agent.update(rewards, actions.astype(np.uint8))
+        ret = actions[0], rewards[0], preds[0], probs[0]
+        return ret
+
+    results: List[Result] = []
+    while not schedule.finished():
+        results.append(trial_process(agent, schedule, timestep))
+    return results
 
 
-def trial_process(agent: Agent, reward_prob: Probability) -> Result:
-    pred = agent.predict()
-    prob = agent.calculate_response_prob(-pred)
-    action = agent.emit_action(prob)
-    reward = reward_function(reward_prob)
-    agent.update(reward, action)
-    return action, reward, pred, prob
+def run_extinction(agent: Agent, schedule: ConcurrentSchedule,
+                   timestep: float):
+    counts = [timestep for _ in range(len(schedule.val))]
 
+    def trial_process(agent: Agent, schedule: ConcurrentSchedule,
+                      timestep: float) -> Result:
+        preds = agent.predict()
+        probs = agent.calculate_response_probs(-preds)
+        actions = agent.choose_action(probs)
+        rewards = schedule.step(counts, actions.tolist())
+        agent.update(rewards, actions.astype(np.uint8))
+        ret = actions[0], rewards[0], preds[0], probs[0]
+        return ret
 
-def run(agent: Agent, trial: int, reward_prob: Probability) -> List[Result]:
-    return list(map(lambda _: trial_process(agent, reward_prob), range(trial)))
+    results: List[Result] = []
+    while not schedule.finished():
+        results.append(trial_process(agent, schedule, timestep))
+    return results
 
 
 if __name__ == '__main__':
@@ -32,23 +56,32 @@ if __name__ == '__main__':
     from extbrst.model import GAIAgent
     from extbrst.util import get_nth_ancestor
 
-    baseline_reward_probs: List[Probability] = [
-        1., 0.75, 0.5, 0.25, 0.1, 0.05, 0.01
-    ]
+    requirements: List[Probability] = [1 + 1e-8]
     extinction: Probability = 0.
-    baseline_lenght: NumberOfTrial = 200
-    extinction_lenght: NumberOfTrial = 200
+    baseline_lenght: NumberOfTrial = 500
+    extinction_lenght: NumberOfTrial = 3600
+    num_alt = 10
 
     results: List[List[OutputData]] = []
-    # run simulations for each baseline reward probability
-    for blrp in baseline_reward_probs:
-        agent = GAIAgent(1., bias=5.)
-        _baseline_result = run(agent, trial=baseline_lenght, reward_prob=blrp)
-        _ext_result = run(agent,
-                          trial=extinction_lenght,
-                          reward_prob=extinction)
+    # run simulations for each VR schedule
+    for rq in requirements:
+        agent = GAIAgent(1., 1 + num_alt)  # operant + alternative behaviors
+        baseline_schedule = VariableRatio(rq, baseline_lenght, 0)
+        alternative_schedules = [
+            VariableInterval(120., 1000, 1.) for _ in range(num_alt)
+        ]
+
+        baseline_schedules = ConcurrentSchedule([baseline_schedule] +
+                                                alternative_schedules)
+        _baseline_result = run_baseline(agent, baseline_schedules, 1.)
+
+        ext = Extinction(extinction_lenght)
+        [alt.reset for alt in alternative_schedules]
+        extinction_schedules = ConcurrentSchedule([ext] +
+                                                  alternative_schedules)
+        _ext_result = run_extinction(agent, extinction_schedules, 1.)
         baseline_result: List[OutputData] = \
-            list(map(lambda br: (blrp, ) + br, _baseline_result))
+            list(map(lambda br: (1 / rq, ) + br, _baseline_result))
         ext_result: List[OutputData] = \
             list(map(lambda er: (extinction, ) + er, _ext_result))
         results.append(baseline_result + ext_result)
