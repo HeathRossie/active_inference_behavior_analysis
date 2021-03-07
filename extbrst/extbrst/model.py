@@ -72,7 +72,7 @@ class SAIAgent(Agent):
 
     def update(self, reward: Reward, action: Action):
         self.__alpha_t += reward * action * 0.1
-        self.__beta_t[action] = (1 - reward) * action * 0.1
+        self.__beta_t += (1 - reward) * action * 0.1
 
     def predict(self) -> NDArray[1, Prediction]:
         nu_t = self.__alpha_t + self.__beta_t

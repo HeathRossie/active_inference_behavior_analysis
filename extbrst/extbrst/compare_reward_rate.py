@@ -18,7 +18,7 @@ def run_baseline(agent: Agent, schedule: ConcurrentSchedule, timestep: float):
         probs = agent.calculate_response_probs(-preds)
         actions = agent.choose_action(probs)
         counts = actions.copy().tolist()
-        counts[1] = timestep
+        counts[1:] = [timestep for _ in range(len(counts) - 1)]
         rewards = schedule.step(counts, actions.tolist())
         agent.update(rewards, actions.astype(np.uint8))
         ret = actions[0], rewards[0], preds[0], probs[0]
