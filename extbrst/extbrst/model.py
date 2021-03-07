@@ -1,4 +1,4 @@
-from abc import ABC, ABCMeta
+from abc import ABCMeta, abstractmethod
 
 import numpy as np
 from nptyping import NDArray
@@ -13,22 +13,31 @@ NumberOfOptions = int
 
 class Agent(metaclass=ABCMeta):
     # TODO: parameterize the learning rate
+    @abstractmethod
     def update(self, reward: NDArray[1, Reward], action: NDArray[1, Action]):
         pass
 
+    @abstractmethod
     def predict(self) -> NDArray[1, Prediction]:
         pass
 
+    @abstractmethod
     def calculate_response_probs(
             self, pred: NDArray[1, Prediction]) -> NDArray[1, Probability]:
         pass
 
+    @abstractmethod
     def choose_action(self, prob: NDArray[1,
                                           Probability]) -> NDArray[1, Action]:
-        return 0
+        pass
 
 
 class GAIAgent(Agent):
+    """
+    An implementation of the model proposed by Markovic, et al. (2021).
+    Original article and author's implementations are available on https://arxiv.org/pdf/2101.08699.pdf and https://github.com/dimarkov/aibandits respectively.
+    `GAIAgent` is who tried to minimize expected free energy directly.
+    """
     def __init__(self, lamb: float, k: NumberOfOptions):
         self.__alpha = np.exp(2 * lamb)
         self.__alpha_t = np.ones(k)
@@ -64,6 +73,11 @@ class GAIAgent(Agent):
 
 
 class SAIAgent(Agent):
+    """
+    An implementation of the model proposed by Markovic, et al. (2021).
+    Original article and author's implementations are available on https://arxiv.org/pdf/2101.08699.pdf and https://github.com/dimarkov/aibandits respectively.
+    `SAIAgent` is who tried to minimize expected surprisal instead of expected free energy.
+    """
     def __init__(self, lamb: float, k: NumberOfOptions):
         self.__lambda = lamb
         self.__alpha_t = np.ones(k)
