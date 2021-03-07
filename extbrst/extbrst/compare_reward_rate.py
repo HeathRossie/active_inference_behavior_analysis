@@ -70,6 +70,7 @@ if __name__ == '__main__':
         alternative_schedules = [
             VariableInterval(120., 1000, 1.) for _ in range(num_alt)
         ]
+        [s.forever() for s in alternative_schedules]
 
         baseline_schedules = ConcurrentSchedule([baseline_schedule] +
                                                 alternative_schedules)

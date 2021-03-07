@@ -36,6 +36,14 @@ class Schedule(metaclass=ABCMeta):
     def reset(self):
         pass
 
+    @abstractmethod
+    def forever(self):
+        self.__repeat = True
+
+    @abstractmethod
+    def once(self):
+        self.__repeat = False
+
     @abstractproperty
     def val(self) -> Any:
         pass
@@ -48,6 +56,10 @@ class Schedule(metaclass=ABCMeta):
     def vals(self) -> Any:
         pass
 
+    @abstractproperty
+    def repeat(self) -> bool:
+        return self.__repeat
+
 
 class VariableInterval(Schedule):
     def __init__(self, val: float, n: int, _min: float):
@@ -57,6 +69,7 @@ class VariableInterval(Schedule):
         self.__count = 0
         self.__intervals = randomize(_exp_rng(val, n, _min))
         self.__interval = self.__intervals[self.__count]
+        self.__repeat = False
 
     def config(self, val: float, n: int, _min: float):
         self.__val = val
@@ -72,6 +85,8 @@ class VariableInterval(Schedule):
             self.__count += 1
             if not self.finished():
                 self.__interval = self.__intervals[self.__count]
+            elif self.__repeat:
+                self.reset()
             return 1
         return 0
 
@@ -82,6 +97,12 @@ class VariableInterval(Schedule):
         self.__count = 0
         self.__intervals = randomize(self.__intervals)
         self.__interval = self.__intervals[self.__count]
+
+    def forever(self):
+        self.__repeat = True
+
+    def once(self):
+        self.__repeat = False
 
     @property
     def val(self) -> float:
@@ -95,6 +116,10 @@ class VariableInterval(Schedule):
     def vals(self) -> NDArray[1, float]:
         return self.__intervals
 
+    @property
+    def repeat(self) -> bool:
+        return self.__repeat
+
 
 class VariableRatio(Schedule):
     def __init__(self, val: float, n: int, _min: float):
@@ -104,6 +129,7 @@ class VariableRatio(Schedule):
         self.__count = 0
         self.__responses = randomize(_geom_rng(val, n, _min))
         self.__response = self.__responses[self.__count]
+        self.__repeat = False
 
     def config(self, val: float, n: int, _min: float):
         self.__val = val
@@ -119,6 +145,8 @@ class VariableRatio(Schedule):
             self.__count += 1
             if not self.finished():
                 self.__response = self.__responses[self.__count]
+            elif self.__repeat:
+                self.reset()
             return 1
         return 0
 
@@ -129,6 +157,12 @@ class VariableRatio(Schedule):
         self.__count = 0
         self.__responses = randomize(self.__responses)
         self.__response = self.__responses[self.__count]
+
+    def forever(self):
+        self.__repeat = True
+
+    def once(self):
+        self.__repeat = False
 
     @property
     def val(self) -> float:
@@ -142,11 +176,16 @@ class VariableRatio(Schedule):
     def vals(self) -> NDArray[1, float]:
         return self.__responses
 
+    @property
+    def repeat(self) -> bool:
+        return self.__repeat
+
 
 class Extinction(Schedule):
     def __init__(self, val: float):
         self.__val = val
         self.__count = 0
+        self.__repeat = False
 
     def config(self, val: float, n: int = 0, _min: float = 0):
         _, _ = n, _min
@@ -158,10 +197,18 @@ class Extinction(Schedule):
         return 0
 
     def finished(self) -> bool:
+        if self.__repeat:
+            return False
         return self.__count >= self.__val
 
     def reset(self):
         self.__count = 0
+
+    def forever(self):
+        self.__repeat = True
+
+    def once(self):
+        self.__repeat = False
 
     @property
     def val(self) -> float:
@@ -175,10 +222,15 @@ class Extinction(Schedule):
     def vals(self) -> None:
         pass
 
+    @property
+    def repeat(self) -> bool:
+        return self.__repeat
+
 
 class ConcurrentSchedule(Schedule):
     def __init__(self, schedules: List[Schedule]):
         self.__schedules = schedules
+        self.__repeat = False
 
     def config(self, val: List[Any], n: List[int], _min: List[float]):
         for i in range(len(self.__schedules)):
@@ -198,6 +250,16 @@ class ConcurrentSchedule(Schedule):
         for i in range(len(self.__schedules)):
             self.__schedules[i].reset()
 
+    def forever(self):
+        self.__repeat = True
+        for i in range(len(self.__schedules)):
+            self.__schedules[i].forever()
+
+    def once(self):
+        self.__repeat = False
+        for i in range(len(self.__schedules)):
+            self.__schedules[i].once()
+
     @property
     def val(self) -> List[Any]:
         return [s.val for s in self.__schedules]
@@ -209,3 +271,7 @@ class ConcurrentSchedule(Schedule):
     @property
     def vals(self) -> List[Any]:
         return [s.vals for s in self.__schedules]
+
+    @property
+    def repeat(self) -> bool:
+        return self.__repeat
