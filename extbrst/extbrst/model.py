@@ -9,7 +9,6 @@ from extbrst.types import (Action, NumberOfOptions, Prediction, Probability,
 
 
 class Agent(metaclass=ABCMeta):
-    # TODO: parameterize the learning rate
     @abstractmethod
     def update(self, reward: NDArray[1, Reward], action: NDArray[1, Action]):
         pass
@@ -35,15 +34,16 @@ class GAIAgent(Agent):
     Original article and author's implementations are available on https://arxiv.org/pdf/2101.08699.pdf and https://github.com/dimarkov/aibandits respectively.
     `GAIAgent` is who tried to minimize expected free energy directly.
     """
-    def __init__(self, lamb: float, k: NumberOfOptions):
+    def __init__(self, lamb: float, k: NumberOfOptions, lr: float):
         self.__alpha = np.exp(2 * lamb)
         self.__alpha_t = np.ones(k)
         self.__beta_t = np.ones(k)
+        self.__lr = lr
         self.__k = k
 
     def update(self, reward: NDArray[1, Reward], action: NDArray[1, Action]):
-        self.__alpha_t += reward * action * 0.1
-        self.__beta_t += (1 - reward) * action * 0.1
+        self.__alpha_t += reward * action * self.__lr
+        self.__beta_t += (1 - reward) * action * self.__lr
 
     def predict(self) -> NDArray[1, Prediction]:
         nu_t = self.__alpha_t + self.__beta_t
@@ -75,15 +75,16 @@ class SAIAgent(Agent):
     Original article and author's implementations are available on https://arxiv.org/pdf/2101.08699.pdf and https://github.com/dimarkov/aibandits respectively.
     `SAIAgent` is who tried to minimize expected surprisal instead of expected free energy.
     """
-    def __init__(self, lamb: float, k: NumberOfOptions):
+    def __init__(self, lamb: float, k: NumberOfOptions, lr: float):
         self.__lambda = lamb
         self.__alpha_t = np.ones(k)
         self.__beta_t = np.ones(k)
+        self.__lr = lr
         self.__k = k
 
     def update(self, reward: Reward, action: Action):
-        self.__alpha_t += reward * action * 0.1
-        self.__beta_t += (1 - reward) * action * 0.1
+        self.__alpha_t += reward * action * self.__lr
+        self.__beta_t += (1 - reward) * action * self.__lr
 
     def predict(self) -> NDArray[1, Prediction]:
         nu_t = self.__alpha_t + self.__beta_t
