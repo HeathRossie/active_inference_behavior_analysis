@@ -1,41 +1,49 @@
-from abc import ABC, ABCMeta
+from abc import ABCMeta, abstractmethod
 
 import numpy as np
 from nptyping import NDArray
 from scipy.special import betaln, digamma
 
-Prediction = float
-Probability = float
-Action = int
-Reward = int
-NumberOfOptions = int
+from extbrst.types import (Action, NumberOfOptions, Prediction, Probability,
+                           Reward)
 
 
 class Agent(metaclass=ABCMeta):
-    def update(self, reward: Reward, action: Action):
+    # TODO: parameterize the learning rate
+    @abstractmethod
+    def update(self, reward: NDArray[1, Reward], action: NDArray[1, Action]):
         pass
 
+    @abstractmethod
     def predict(self) -> NDArray[1, Prediction]:
         pass
 
+    @abstractmethod
     def calculate_response_probs(
             self, pred: NDArray[1, Prediction]) -> NDArray[1, Probability]:
         pass
 
-    def choose_action(self, prob: NDArray[1, Probability]) -> Action:
-        return 0
+    @abstractmethod
+    def choose_action(self, prob: NDArray[1,
+                                          Probability]) -> NDArray[1, Action]:
+        pass
 
 
 class GAIAgent(Agent):
+    """
+    An implementation of the model proposed by Markovic, et al. (2021).
+    Original article and author's implementations are available on https://arxiv.org/pdf/2101.08699.pdf and https://github.com/dimarkov/aibandits respectively.
+    `GAIAgent` is who tried to minimize expected free energy directly.
+    """
     def __init__(self, lamb: float, k: NumberOfOptions):
         self.__alpha = np.exp(2 * lamb)
         self.__alpha_t = np.ones(k)
         self.__beta_t = np.ones(k)
         self.__k = k
 
-    def update(self, reward: Reward, action: Action):
-        self.__alpha_t[action] += reward
-        self.__beta_t[action] += (1 - reward)
+    def update(self, reward: NDArray[1, Reward], action: NDArray[1, Action]):
+        self.__alpha_t += reward * action * 0.1
+        self.__beta_t += (1 - reward) * action * 0.1
 
     def predict(self) -> NDArray[1, Prediction]:
         nu_t = self.__alpha_t + self.__beta_t
@@ -55,11 +63,18 @@ class GAIAgent(Agent):
         pexp = np.exp(preds - pmax)
         return pexp / np.sum(pexp)
 
-    def choose_action(self, probs: NDArray[1, Probability]) -> Action:
-        return np.random.choice(self.__k, p=probs)
+    def choose_action(self, probs: NDArray[1,
+                                           Probability]) -> NDArray[1, Action]:
+        act = np.random.choice(self.__k, p=probs)
+        return np.identity(self.__k)[act]
 
 
 class SAIAgent(Agent):
+    """
+    An implementation of the model proposed by Markovic, et al. (2021).
+    Original article and author's implementations are available on https://arxiv.org/pdf/2101.08699.pdf and https://github.com/dimarkov/aibandits respectively.
+    `SAIAgent` is who tried to minimize expected surprisal instead of expected free energy.
+    """
     def __init__(self, lamb: float, k: NumberOfOptions):
         self.__lambda = lamb
         self.__alpha_t = np.ones(k)
@@ -67,8 +82,8 @@ class SAIAgent(Agent):
         self.__k = k
 
     def update(self, reward: Reward, action: Action):
-        self.__alpha_t[action] += reward
-        self.__beta_t[action] += (1 - reward)
+        self.__alpha_t += reward * action * 0.1
+        self.__beta_t += (1 - reward) * action * 0.1
 
     def predict(self) -> NDArray[1, Prediction]:
         nu_t = self.__alpha_t + self.__beta_t
@@ -88,5 +103,7 @@ class SAIAgent(Agent):
         pexp = np.exp(preds - pmax)
         return pexp / np.sum(pexp)
 
-    def choose_action(self, probs: NDArray[1, Probability]) -> Action:
-        return np.random.choice(self.__k, p=probs)
+    def choose_action(self, probs: NDArray[1,
+                                           Probability]) -> NDArray[1, Action]:
+        act = np.random.choice(self.__k, p=probs)
+        return np.identity(self.__k)[act]
