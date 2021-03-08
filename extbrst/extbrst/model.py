@@ -36,8 +36,8 @@ class GAIAgent(Agent):
     """
     def __init__(self, lamb: float, k: NumberOfOptions, lr: float):
         self.__alpha = np.exp(2 * lamb)
-        self.__alpha_t = np.ones(k)
-        self.__beta_t = np.ones(k)
+        self.__alpha_t: NDArray[1, float] = np.ones(k)
+        self.__beta_t: NDArray[1, float] = np.ones(k)
         self.__lr = lr
         self.__k = k
 
@@ -68,6 +68,18 @@ class GAIAgent(Agent):
         act = np.random.choice(self.__k, p=probs)
         return np.identity(self.__k)[act]
 
+    @property
+    def alpha_t(self) -> NDArray[1, float]:
+        return self.__alpha_t
+
+    @property
+    def beta_t(self) -> NDArray[1, float]:
+        return self.__beta_t
+
+    @property
+    def k(self) -> int:
+        return self.__k
+
 
 class SAIAgent(Agent):
     """
@@ -77,8 +89,8 @@ class SAIAgent(Agent):
     """
     def __init__(self, lamb: float, k: NumberOfOptions, lr: float):
         self.__lambda = lamb
-        self.__alpha_t = np.ones(k)
-        self.__beta_t = np.ones(k)
+        self.__alpha_t: NDArray[1, float] = np.ones(k)
+        self.__beta_t: NDArray[1, float] = np.ones(k)
         self.__lr = lr
         self.__k = k
 
@@ -108,3 +120,15 @@ class SAIAgent(Agent):
                                            Probability]) -> NDArray[1, Action]:
         act = np.random.choice(self.__k, p=probs)
         return np.identity(self.__k)[act]
+
+    @property
+    def alpha_t(self) -> NDArray[1, float]:
+        return self.__alpha_t
+
+    @property
+    def beta_t(self) -> NDArray[1, float]:
+        return self.__beta_t
+
+    @property
+    def k(self) -> int:
+        return self.__k
