@@ -55,7 +55,7 @@ def run_extinction(agent: Agent, schedule: ConcurrentSchedule,
 if __name__ == '__main__':
     from pandas import DataFrame
 
-    from extbrst.model import GAIAgent
+    from extbrst.model import GAIStaticAgent
     from extbrst.util import get_nth_ancestor
 
     requirements: List[RequiredResponse] = [1 + 1e-8]
@@ -67,7 +67,7 @@ if __name__ == '__main__':
     results: List[List[OutputData]] = []
     # run simulations for each VR schedule
     for rq in requirements:
-        agent = GAIAgent(1., 1 + num_alt)  # operant + alternative behaviors
+        agent = GAIStaticAgent(1., 1 + num_alt, 0.1)
         baseline_schedule = VariableRatio(rq, baseline_lenght, 0)
         alternative_schedules = [
             VariableInterval(120., 1000, 1.) for _ in range(num_alt)
