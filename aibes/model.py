@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
+from typing import Tuple
 
 import numpy as np
 from nptyping import NDArray
@@ -14,7 +15,7 @@ class Agent(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def predict(self) -> NDArray[1, Prediction]:
+    def predict(self) -> Tuple[NDArray[1, Prediction], NDArray[1, Prediction]]:
         pass
 
     @abstractmethod
@@ -57,7 +58,7 @@ class GAIStaticAgent(Agent):
         self.__alpha_t += reward * action * self.__lr
         self.__beta_t += (1 - reward) * action * self.__lr
 
-    def predict(self) -> NDArray[1, Prediction]:
+    def predict(self) -> Tuple[NDArray[1, Prediction], NDArray[1, float]]:
         nu_t = self.__alpha_t + self.__beta_t
         mu_t = self.__alpha_t / nu_t
         kl_div_a = -betaln(self.__alpha_t, self.__beta_t) \
@@ -67,7 +68,11 @@ class GAIStaticAgent(Agent):
         h_a = - mu_t * digamma(self.__alpha_t + 1) \
             - (1 - mu_t) * digamma(self.__beta_t + 1) \
             + digamma(nu_t + 1)
-        return kl_div_a + h_a
+        epistemic = \
+            mu_t * (-np.log(mu_t) + digamma(self.__alpha_t + 1) - digamma(nu_t + 1)) \
+            + (1 - mu_t) * (-np.log(1 - mu_t) + digamma(self.__beta_t + 1) - digamma(nu_t + 1))
+        pragmatic = kl_div_a + h_a - epistemic
+        return pragmatic, epistemic
 
     def calculate_response_probs(
             self, preds: NDArray[1, Prediction]) -> NDArray[1, Probability]:
@@ -110,7 +115,7 @@ class SAIStaticAgent(Agent):
         self.__alpha_t += reward * action * self.__lr
         self.__beta_t += (1 - reward) * action * self.__lr
 
-    def predict(self) -> NDArray[1, Prediction]:
+    def predict(self) -> Tuple[NDArray[1, Prediction], NDArray[1, Prediction]]:
         nu_t = self.__alpha_t + self.__beta_t
         mu_t = self.__alpha_t / nu_t
 
@@ -120,7 +125,11 @@ class SAIStaticAgent(Agent):
         h_a = - mu_t * digamma(self.__alpha_t + 1) \
             - (1 - mu_t) * digamma(self.__beta_t + 1) \
             + digamma(nu_t + 1)
-        return kl_div_a + h_a
+        epistemic = \
+            mu_t * (-np.log(mu_t) + digamma(self.__alpha_t + 1) - digamma(nu_t + 1)) \
+            + (1 - mu_t) * (-np.log(1 - mu_t) + digamma(self.__beta_t + 1) - digamma(nu_t + 1))
+        pragmatic = kl_div_a + h_a - epistemic
+        return pragmatic, epistemic
 
     def calculate_response_probs(
             self, preds: NDArray[1, Prediction]) -> NDArray[1, Probability]:
@@ -177,7 +186,7 @@ class GAIDynamicAgent(Agent):
         self.__a += self.__omega
         self.__b += 1 - eta - self.__omega
 
-    def predict(self) -> NDArray[1, Prediction]:
+    def predict(self) -> Tuple[NDArray[1, Prediction], NDArray[1, Prediction]]:
         nu_t = self.__alpha_t + self.__beta_t
         mu_t = self.__alpha_t / nu_t
         kl_div_a = -betaln(self.__alpha_t, self.__beta_t) \
@@ -187,7 +196,11 @@ class GAIDynamicAgent(Agent):
         h_a = - mu_t * digamma(self.__alpha_t + 1) \
             - (1 - mu_t) * digamma(self.__beta_t + 1) \
             + digamma(nu_t + 1)
-        return kl_div_a + h_a
+        epistemic = \
+            mu_t * (-np.log(mu_t) + digamma(self.__alpha_t + 1) - digamma(nu_t + 1)) \
+            + (1 - mu_t) * (-np.log(1 - mu_t) + digamma(self.__beta_t + 1) - digamma(nu_t + 1))
+        pragmatic = kl_div_a + h_a - epistemic
+        return pragmatic, epistemic
 
     def calculate_response_probs(
             self, preds: NDArray[1, Prediction]) -> NDArray[1, Probability]:
@@ -249,7 +262,7 @@ class SAIDynamicAgent(Agent):
         self.__a += self.__omega
         self.__b += 1 - eta - self.__omega
 
-    def predict(self) -> NDArray[1, Prediction]:
+    def predict(self) -> Tuple[NDArray[1, Prediction], NDArray[1, Prediction]]:
         nu_t = self.__alpha_t + self.__beta_t
         mu_t = self.__alpha_t / nu_t
 
@@ -259,7 +272,11 @@ class SAIDynamicAgent(Agent):
         h_a = - mu_t * digamma(self.__alpha_t + 1) \
             - (1 - mu_t) * digamma(self.__beta_t + 1) \
             + digamma(nu_t + 1)
-        return kl_div_a + h_a
+        epistemic = \
+            mu_t * (-np.log(mu_t) + digamma(self.__alpha_t + 1) - digamma(nu_t + 1)) \
+            + (1 - mu_t) * (-np.log(1 - mu_t) + digamma(self.__beta_t + 1) - digamma(nu_t + 1))
+        pragmatic = kl_div_a + h_a - epistemic
+        return pragmatic, epistemic
 
     def calculate_response_probs(
             self, preds: NDArray[1, Prediction]) -> NDArray[1, Probability]:

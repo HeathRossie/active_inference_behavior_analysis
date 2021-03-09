@@ -15,7 +15,8 @@ def run_baseline(agent: Agent, schedule: ConcurrentSchedule,
                  timestep: Interval):
     def trial_process(agent: Agent, schedule: ConcurrentSchedule,
                       timestep: float) -> Result:
-        preds = agent.predict()
+        pragmatic, epistemic = agent.predict()
+        preds = pragmatic + epistemic
         probs = agent.calculate_response_probs(-preds)
         actions = agent.choose_action(probs)
         counts = actions.copy().tolist()
@@ -37,7 +38,8 @@ def run_extinction(agent: Agent, schedule: ConcurrentSchedule,
 
     def trial_process(agent: Agent, schedule: ConcurrentSchedule,
                       timestep: Interval) -> Result:
-        preds = agent.predict()
+        pragmatic, epistemic = agent.predict()
+        preds = pragmatic + epistemic
         probs = agent.calculate_response_probs(-preds)
         actions = agent.choose_action(probs)
         rewards = schedule.step(counts, actions.tolist())
