@@ -1,11 +1,11 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 
 import numpy as np
 from nptyping import NDArray
 from scipy.special import betaln, digamma
 
-from extbrst.types import (Action, NumberOfOptions, Prediction, Probability,
-                           Reward)
+from aibes.types import (Action, NumberOfOptions, Prediction, Probability,
+                         Reward)
 
 
 class Agent(metaclass=ABCMeta):
@@ -25,6 +25,18 @@ class Agent(metaclass=ABCMeta):
     @abstractmethod
     def choose_action(self, prob: NDArray[1,
                                           Probability]) -> NDArray[1, Action]:
+        pass
+
+    @abstractproperty
+    def alpha_t(self) -> NDArray[1, float]:
+        pass
+
+    @abstractproperty
+    def beta_t(self) -> NDArray[1, float]:
+        pass
+
+    @abstractproperty
+    def k(self) -> int:
         pass
 
 

@@ -5,9 +5,9 @@ import numpy as np
 import scipy.stats as st
 from nptyping import NDArray
 
-from extbrst.types import (Action, Duration, Interval, NumberOfReward,
-                           RequiredResponse, Reward)
-from extbrst.util import randomize
+from aibes.types import (Action, Duration, Interval, NumberOfReward,
+                         RequiredResponse, Reward)
+from aibes.util import randomize
 
 
 def _exp_rng(mean: Interval, n: NumberOfReward,
