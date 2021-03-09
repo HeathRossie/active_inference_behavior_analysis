@@ -1,12 +1,11 @@
 from typing import List, Tuple
 
 import numpy as np
-
-from extbrst.model import Action, Agent, Prediction, Probability, Reward
-from extbrst.schedule import (ConcurrentSchedule, Extinction, VariableInterval,
-                              VariableRatio)
-from extbrst.types import (Duration, Interval, NumberOfOptions, NumberOfReward,
-                           RequiredResponse)
+from aibes.model import Action, Agent, Prediction, Probability, Reward
+from aibes.schedule import (ConcurrentSchedule, Extinction, VariableInterval,
+                            VariableRatio)
+from aibes.types import (Duration, Interval, NumberOfOptions, NumberOfReward,
+                         RequiredResponse)
 
 Result = Tuple[Action, Reward, Prediction, Probability]
 OutputData = Tuple[Probability, Action, Reward, Prediction, Probability]
@@ -53,10 +52,9 @@ def run_extinction(agent: Agent, schedule: ConcurrentSchedule,
 
 
 if __name__ == '__main__':
+    from aibes.model import GAIStaticAgent
+    from aibes.util import get_nth_ancestor
     from pandas import DataFrame
-
-    from extbrst.model import GAIAgent
-    from extbrst.util import get_nth_ancestor
 
     requirements: List[RequiredResponse] = [1 + 1e-8]
     extinction: Probability = 0.
@@ -67,7 +65,7 @@ if __name__ == '__main__':
     results: List[List[OutputData]] = []
     # run simulations for each VR schedule
     for rq in requirements:
-        agent = GAIAgent(1., 1 + num_alt)  # operant + alternative behaviors
+        agent = GAIStaticAgent(1., 1 + num_alt, 0.1)
         baseline_schedule = VariableRatio(rq, baseline_lenght, 0)
         alternative_schedules = [
             VariableInterval(120., 1000, 1.) for _ in range(num_alt)
