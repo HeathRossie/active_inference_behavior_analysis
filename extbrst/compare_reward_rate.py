@@ -97,7 +97,6 @@ if __name__ == '__main__':
     clap.add_argument("--lamb", "-L", type=float, default=1.)
     args = clap.parse_args()
 
-    # TODO: make below variables are given as command line argument
     requirement: RequiredResponse = args.requirement + 1e-8
     num_rewards: NumberOfReward = args.num_reward
     num_alts: NumberOfOptions = args.num_alternatives
