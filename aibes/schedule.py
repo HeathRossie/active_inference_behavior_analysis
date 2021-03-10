@@ -84,6 +84,8 @@ class VariableInterval(Schedule):
         self.__interval = self.__intervals[self.__count]
 
     def step(self, count: Interval, action: Action) -> int:
+        if self.finished():
+            return 0
         self.__interval -= count
         if self.__interval <= 0. and action == 1:
             self.__count += 1
@@ -145,6 +147,8 @@ class VariableRatio(Schedule):
         self.__response = self.__responses[self.__count]
 
     def step(self, count: Action, action: Action) -> int:
+        if self.finished():
+            return 0
         self.__response -= count
         if self.__response <= 0 and action == 1:
             self.__count += 1
@@ -242,6 +246,8 @@ class ConcurrentSchedule(Schedule):
             self.__schedules[i].config(val[i], n[i], _min[i])
 
     def step(self, count: Sequence, action: Sequence) -> NDArray[1, int]:
+        if self.finished():
+            return np.zeros(len(self.__schedules))
         rewards: NDArray[1, Reward] = np.zeros(len(self.__schedules))
         for i in range(len(self.__schedules)):
             rew = self.__schedules[i].step(count[i], action[i])
