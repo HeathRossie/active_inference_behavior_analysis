@@ -4,4 +4,4 @@
 __pycache__/
 /.vim
 /figs
-/data
+data/
