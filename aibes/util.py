@@ -1,7 +1,9 @@
+from itertools import product
 from pathlib import Path
-from typing import Any, List
+from typing import Any, List, Tuple
 
 import numpy as np
+import yaml
 from nptyping import NDArray
 
 from aibes.model import Agent
@@ -22,3 +24,13 @@ def colnames(agent: Agent, condition: str) -> List[str]:
     colnames += [f"epistemic_{i}" for i in range(k)]
     colnames += [f"response_probability_{i}" for i in range(k)]
     return colnames
+
+
+def load_yaml(path: str) -> dict:
+    f = open(path, "r")
+    d = yaml.safe_load(f)
+    return d
+
+
+def all_parameters_combination(yaml: dict) -> List[Tuple]:
+    return list(product(*yaml.values()))

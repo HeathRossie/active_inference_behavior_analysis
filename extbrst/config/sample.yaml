@@ -1,0 +1,9 @@
+agent-type:          [GAIStaticAgent]  # type of agent
+requirements:        [1., 2., 5., 10.] # number of required responses to obtain rewards
+num-reward:          [200]             # number of rewards duaring training
+num-alternatives:    [1]               # number of alternative behaviors
+mean-interval:       [120.]            # mean intervals of rewards which obtained from alternative behaviors
+extinction-duration: [600.]            # duration of extinction phase
+timestep:            [1.]              # timestep of simulation
+learning-rate:       [0.1]             # learning rate of agent
+lambda:              [1.]              # weight for pragmatic value
