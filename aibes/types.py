@@ -1,3 +1,5 @@
+from typing import Any, Dict
+
 Prediction = float
 Probability = float
 Action = int
@@ -8,3 +10,4 @@ RequiredResponse = float
 Duration = float
 NumberOfReward = int
 NumberOfTrial = int
+Parameters = Dict[str, Any]
