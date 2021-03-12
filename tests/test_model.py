@@ -15,8 +15,9 @@ def test_model_initialize(k, expected):
     for ac in AGENT_CLASSES:
         agent = ac(1., k, 0.1)
         agent = m.GAIStaticAgent(1., k, 0.1)
-        assert sum(agent._alpha_t == expected)
-        assert sum(agent.beta_t == expected)
+        alpha_t, beta_t = agent.get_params(["alpha_t", "beta_t"])
+        assert sum(alpha_t == expected)
+        assert sum(beta_t == expected)
 
 
 @pytest.mark.parametrize(
@@ -40,8 +41,9 @@ def test_update(rewards, actions, lr, expected_alpha, expected_beta):
     for ac in AGENT_CLASSES:
         agent: m.Agent = ac(1., k, lr)
         agent.update(rewards, actions)
-        assert sum(agent.alpha_t == expected_alpha) == k
-        assert sum(agent.beta_t == expected_beta) == k
+        alpha_t, beta_t = agent.get_params(["alpha_t", "beta_t"])
+        assert sum(alpha_t == expected_alpha) == k
+        assert sum(beta_t == expected_beta) == k
 
 
 def G(alpha_t, beta_t, alpha):
@@ -81,10 +83,10 @@ def test_predict_gaia(alpha_t, beta_t, expected):
     lr = 0.1
     for ac in GAIAGENT_CLASSES:
         agent: m.Agent = ac(1., k, lr)
-        agent._alpha_t = alpha_t
-        agent._beta_t = beta_t
+        agent.set_params([("alpha_t", alpha_t), ("beta_t", beta_t)])
         pragmatic, epistemic = agent.predict()
         preds = pragmatic + epistemic
+        print(preds, expected)
         assert sum(preds == expected) == 2
 
 
@@ -125,8 +127,7 @@ def test_predict_saia(alpha_t, beta_t, expected):
     lr = 0.1
     for ac in SAIAGENT_CLASSES:
         agent: m.Agent = ac(1., k, lr)
-        agent._alpha_t = alpha_t
-        agent._beta_t = beta_t
+        agent.set_params([("alpha_t", alpha_t), ("beta_t", beta_t)])
         pragmatic, epistemic = agent.predict()
         preds = pragmatic + epistemic
         assert sum(preds == expected) == 2
