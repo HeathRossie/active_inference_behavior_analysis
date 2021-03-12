@@ -156,7 +156,7 @@ if __name__ == '__main__':
         if not data_dir.exists():
             data_dir.mkdir()
         filename = data_dir.joinpath(
-            f"{agent_type}_lr-{lr}_lambda-{lamb}_VR-{int(requirement)}_nrewards-{num_rewards}_nalts-{num_alts}_VI-{mean_interval}.csv"
+            f"{agent_type}_lr-{lr}_lambda-{lamb}_VR-{requirement}_nrewards-{num_rewards}_nalts-{num_alts}_VI-{mean_interval}.csv"
         )
 
         merged_result = np.vstack((baseline_result, ext_result))
