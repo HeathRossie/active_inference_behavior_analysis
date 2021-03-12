@@ -51,7 +51,11 @@ class GAIStaticAgent(Agent):
     Original article and author's implementations are available on https://arxiv.org/pdf/2101.08699.pdf and https://github.com/dimarkov/aibandits respectively.
     `GAIAgent` is who tried to minimize expected free energy directly.
     """
-    def __init__(self, lamb: float, k: NumberOfOptions, lr: float):
+    def __init__(self,
+                 lamb: float,
+                 k: NumberOfOptions,
+                 lr: float,
+                 bias: float = 6.):
         self.__alpha = np.exp(2 * lamb)
         self.__params: Parameters = {
             "alpha": np.exp(2 * lamb),
@@ -59,6 +63,7 @@ class GAIStaticAgent(Agent):
             "beta_t": np.ones(k)
         }
         self.__lr = lr
+        self.__bias = bias
         self.__k = k
 
     def update(self, reward: NDArray[1, Reward], action: NDArray[1, Action]):
@@ -87,12 +92,16 @@ class GAIStaticAgent(Agent):
 
     def calculate_response_probs(
             self, preds: NDArray[1, Prediction]) -> NDArray[1, Probability]:
+        if self.__k == 1:
+            return 1 / (1 + np.exp(-(preds + self.__bias)))
         pmax = np.max(preds)
         pexp = np.exp(preds - pmax)
         return pexp / np.sum(pexp)
 
     def choose_action(self, probs: NDArray[1,
                                            Probability]) -> NDArray[1, Action]:
+        if self.__k == 1:
+            return (np.random.uniform() <= probs).astype(np.uint8)
         act = np.random.choice(self.__k, p=probs)
         return np.identity(self.__k)[act]
 
@@ -118,7 +127,11 @@ class SAIStaticAgent(Agent):
     Original article and author's implementations are available on https://arxiv.org/pdf/2101.08699.pdf and https://github.com/dimarkov/aibandits respectively.
     `SAIAgent` is who tried to minimize expected surprisal instead of expected free energy.
     """
-    def __init__(self, lamb: float, k: NumberOfOptions, lr: float):
+    def __init__(self,
+                 lamb: float,
+                 k: NumberOfOptions,
+                 lr: float,
+                 bias: float = 0.):
         self.__lambda = lamb
         self.__params: Parameters = {
             "lambda": lamb,
@@ -126,6 +139,7 @@ class SAIStaticAgent(Agent):
             "beta_t": np.ones(k)
         }
         self.__lr = lr
+        self.__bias = bias
         self.__k = k
 
     def update(self, reward: Reward, action: Action):
@@ -154,12 +168,16 @@ class SAIStaticAgent(Agent):
 
     def calculate_response_probs(
             self, preds: NDArray[1, Prediction]) -> NDArray[1, Probability]:
+        if self.__k == 1:
+            return 1 / (1 + np.exp(-(preds + self.__bias)))
         pmax = np.max(preds)
         pexp = np.exp(preds - pmax)
         return pexp / np.sum(pexp)
 
     def choose_action(self, probs: NDArray[1,
                                            Probability]) -> NDArray[1, Action]:
+        if self.__k:
+            return (np.random.uniform() <= probs).astype(np.uint8)
         act = np.random.choice(self.__k, p=probs)
         return np.identity(self.__k)[act]
 
@@ -180,7 +198,11 @@ class SAIStaticAgent(Agent):
 
 
 class GAIDynamicAgent(Agent):
-    def __init__(self, lamb: float, k: NumberOfOptions, lr: float):
+    def __init__(self,
+                 lamb: float,
+                 k: NumberOfOptions,
+                 lr: float,
+                 bias: float = 4.):
         self.__params: Parameters = {
             "alpha": np.exp(2 * lamb),
             "alpha_0": np.ones(k),
@@ -192,6 +214,7 @@ class GAIDynamicAgent(Agent):
             "omega": np.zeros(k)
         }
         self.__lr = lr
+        self.__bias = bias
         self.__k = k
 
     def update(self, reward: NDArray[1, Reward], action: NDArray[1, Action]):
@@ -236,12 +259,16 @@ class GAIDynamicAgent(Agent):
 
     def calculate_response_probs(
             self, preds: NDArray[1, Prediction]) -> NDArray[1, Probability]:
+        if self.__k == 1:
+            return 1 / (1 + np.exp(-(preds + self.__bias)))
         pmax = np.max(preds)
         pexp = np.exp(preds - pmax)
         return pexp / np.sum(pexp)
 
     def choose_action(self, probs: NDArray[1,
                                            Probability]) -> NDArray[1, Action]:
+        if self.__k == 1:
+            return (np.random.uniform() <= probs).astype(np.uint8)
         act = np.random.choice(self.__k, p=probs)
         return np.identity(self.__k)[act]
 
@@ -267,7 +294,11 @@ class SAIDynamicAgent(Agent):
     Original article and author's implementations are available on https://arxiv.org/pdf/2101.08699.pdf and https://github.com/dimarkov/aibandits respectively.
     `SAIAgent` is who tried to minimize expected surprisal instead of expected free energy.
     """
-    def __init__(self, lamb: float, k: NumberOfOptions, lr: float):
+    def __init__(self,
+                 lamb: float,
+                 k: NumberOfOptions,
+                 lr: float,
+                 bias: float = 0.):
         self.__params: Parameters = {
             "lambda": lamb,
             "alpha_0": np.ones(k),
@@ -279,6 +310,7 @@ class SAIDynamicAgent(Agent):
             "omega": np.zeros(k)
         }
         self.__lr = lr
+        self.__bias = bias
         self.__k = k
 
     def update(self, reward: NDArray[1, Reward], action: NDArray[1, Action]):
@@ -322,12 +354,16 @@ class SAIDynamicAgent(Agent):
 
     def calculate_response_probs(
             self, preds: NDArray[1, Prediction]) -> NDArray[1, Probability]:
+        if self.__k == 1:
+            return 1 / (1 + np.exp(-(preds + self.__bias)))
         pmax = np.max(preds)
         pexp = np.exp(preds - pmax)
         return pexp / np.sum(pexp)
 
     def choose_action(self, probs: NDArray[1,
                                            Probability]) -> NDArray[1, Action]:
+        if self.__k == 1:
+            return (np.random.uniform() <= probs).astype(np.uint8)
         act = np.random.choice(self.__k, p=probs)
         return np.identity(self.__k)[act]
 
