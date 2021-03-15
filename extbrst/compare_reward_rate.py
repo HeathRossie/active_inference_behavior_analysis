@@ -144,7 +144,7 @@ if __name__ == '__main__':
                                                 alternative_schedules)
         baseline_result = run_baseline(agent, baseline_schedules, 1.)
         nrow, _ = baseline_result.shape
-        reward_probs = np.full((nrow, 1), 1 / requirement)
+        reward_probs = np.full((nrow - 1, 1), 1 / requirement)
 
         target_schedules = Extinction(extinction_duration)
         [alt.reset for alt in alternative_schedules]
@@ -152,7 +152,7 @@ if __name__ == '__main__':
                                                   alternative_schedules)
         ext_result = run_extinction(agent, extinction_schedules, 1.)
         nrow, _ = ext_result.shape
-        reward_probs = np.vstack((reward_probs, np.full((nrow, 1), 0.)))
+        reward_probs = np.vstack((reward_probs, np.full((nrow - 1, 1), 0.)))
 
         data_dir = get_nth_ancestor(__file__, 0).joinpath("data")
         if not data_dir.exists():
@@ -161,7 +161,7 @@ if __name__ == '__main__':
             f"{agent_type}_lra-{lr_alpha}_lrb-{lr_beta}_lambda-{lamb}_VR-{requirement}_nrewards-{num_rewards}_nalts-{num_alts}_VI-{mean_interval}.csv"
         )
 
-        merged_result = np.vstack((baseline_result, ext_result))
+        merged_result = np.vstack((baseline_result[1:], ext_result[1:]))
         output_data = pd.DataFrame(np.hstack((reward_probs, merged_result)),
                                    columns=colnames(agent,
                                                     "reward_probability"))
