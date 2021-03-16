@@ -24,7 +24,7 @@ def _geom_rng(mean: RequiredResponse, n: NumberOfReward,
 
 class Schedule(metaclass=ABCMeta):
     @abstractmethod
-    def step(self, count: Union[Any, Iterable[Any]],
+    def step(self, stepsize: Union[Any, Iterable[Any]],
              action: Union[int, Iterable[int]]) -> Union[int, Iterable[int]]:
         pass
 
@@ -83,10 +83,10 @@ class VariableInterval(Schedule):
         self.__intervals = randomize(_exp_rng(val, n, _min))
         self.__interval = self.__intervals[self.__count]
 
-    def step(self, count: Interval, action: Action) -> int:
+    def step(self, stepsize: Interval, action: Action) -> int:
         if self.finished():
             return 0
-        self.__interval -= count
+        self.__interval -= stepsize
         if self.__interval <= 0. and action == 1:
             self.__count += 1
             if not self.finished():
@@ -146,10 +146,10 @@ class VariableRatio(Schedule):
         self.__responses = randomize(_geom_rng(val, n, _min))
         self.__response = self.__responses[self.__count]
 
-    def step(self, count: Action, action: Action) -> int:
+    def step(self, stepsize: Action, action: Action) -> int:
         if self.finished():
             return 0
-        self.__response -= count
+        self.__response -= stepsize
         if self.__response <= 0 and action == 1:
             self.__count += 1
             if not self.finished():
@@ -200,9 +200,9 @@ class Extinction(Schedule):
         _, _ = n, _min
         self.__val = val
 
-    def step(self, count: Interval, action: Action) -> int:
+    def step(self, stepsize: Interval, action: Action) -> int:
         _ = action
-        self.__count += count
+        self.__count += stepsize
         return 0
 
     def finished(self) -> bool:
@@ -245,12 +245,12 @@ class ConcurrentSchedule(Schedule):
         for i in range(len(self.__schedules)):
             self.__schedules[i].config(val[i], n[i], _min[i])
 
-    def step(self, count: Sequence, action: Sequence) -> NDArray[1, int]:
+    def step(self, stepsize: Sequence, action: Sequence) -> NDArray[1, int]:
         if self.finished():
             return np.zeros(len(self.__schedules))
         rewards: NDArray[1, Reward] = np.zeros(len(self.__schedules))
         for i in range(len(self.__schedules)):
-            rew = self.__schedules[i].step(count[i], action[i])
+            rew = self.__schedules[i].step(stepsize[i], action[i])
             rewards[i] = rew
         return rewards
 
