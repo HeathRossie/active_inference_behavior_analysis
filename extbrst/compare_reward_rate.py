@@ -93,7 +93,8 @@ if __name__ == '__main__':
     clap.add_argument("--mean-interval", "-i", type=float, default=120.)
     clap.add_argument("--extinction-duration", "-e", type=float, default=1200.)
     clap.add_argument("--timestep", "-t", type=float, default=1.)
-    clap.add_argument("--learning-rate", "-l", type=float, default=.1)
+    clap.add_argument("--learning-rate-alpha", type=float, default=.1)
+    clap.add_argument("--learning-rate-beta", type=float, default=.1)
     clap.add_argument("--lamb", "-L", type=float, default=1.)
     clap.add_argument("--yaml", "-y", type=str)
     args = clap.parse_args()
@@ -105,16 +106,17 @@ if __name__ == '__main__':
         mi: List[Interval] = [args.mean_interval]
         ed: List[Duration] = [args.extinction_duration]
         ts: List[Interval] = [args.timestep]
-        _lr: List[float] = [args.learning_rate]
+        lra: List[float] = [args.learning_rate_alpha]
+        lrb: List[float] = [args.learning_rate_beta]
         l: List[float] = [args.lamb]
         at: List[str] = [args.agent_type]
-        params = list(zip(at, req, nr, na, mi, ed, ts, _lr, l))
+        params = list(zip(at, req, nr, na, mi, ed, ts, lra, lrb, l))
     else:
         config = load_yaml(args.yaml)
         params = all_parameters_combination(config)
 
-    for agent_type, requirement, num_rewards, num_alts, \
-            mean_interval, extinction_duration, timestep, lr, lamb in params:
+    for agent_type, requirement, num_rewards, num_alts, mean_interval, \
+            extinction_duration, timestep, lr_alpha, lr_beta, lamb in params:
         if agent_type == "GAIStaticAgent":
             AgentClass = GAIStaticAgent
         elif agent_type == "GAIDynamicAgent":
@@ -129,7 +131,7 @@ if __name__ == '__main__':
             )
             exit()
 
-        agent = AgentClass(lamb, 1 + num_alts, lr)
+        agent = AgentClass(lamb, 1 + num_alts, lr_alpha, lr_beta)
 
         target_schedule = VariableRatio(requirement + 1e-8, num_rewards, 0)
         alternative_schedules = [
@@ -142,7 +144,7 @@ if __name__ == '__main__':
                                                 alternative_schedules)
         baseline_result = run_baseline(agent, baseline_schedules, 1.)
         nrow, _ = baseline_result.shape
-        reward_probs = np.full((nrow, 1), 1 / requirement)
+        reward_probs = np.full((nrow - 1, 1), 1 / requirement)
 
         target_schedules = Extinction(extinction_duration)
         [alt.reset for alt in alternative_schedules]
@@ -150,16 +152,16 @@ if __name__ == '__main__':
                                                   alternative_schedules)
         ext_result = run_extinction(agent, extinction_schedules, 1.)
         nrow, _ = ext_result.shape
-        reward_probs = np.vstack((reward_probs, np.full((nrow, 1), 0.)))
+        reward_probs = np.vstack((reward_probs, np.full((nrow - 1, 1), 0.)))
 
         data_dir = get_nth_ancestor(__file__, 0).joinpath("data")
         if not data_dir.exists():
             data_dir.mkdir()
         filename = data_dir.joinpath(
-            f"{agent_type}_lr-{lr}_lambda-{lamb}_VR-{requirement}_nrewards-{num_rewards}_nalts-{num_alts}_VI-{mean_interval}.csv"
+            f"{agent_type}_lra-{lr_alpha}_lrb-{lr_beta}_lambda-{lamb}_VR-{requirement}_nrewards-{num_rewards}_nalts-{num_alts}_VI-{mean_interval}.csv"
         )
 
-        merged_result = np.vstack((baseline_result, ext_result))
+        merged_result = np.vstack((baseline_result[1:], ext_result[1:]))
         output_data = pd.DataFrame(np.hstack((reward_probs, merged_result)),
                                    columns=colnames(agent,
                                                     "reward_probability"))

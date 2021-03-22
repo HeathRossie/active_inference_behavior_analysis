@@ -54,7 +54,8 @@ class GAIStaticAgent(Agent):
     def __init__(self,
                  lamb: float,
                  k: NumberOfOptions,
-                 lr: float,
+                 lr_alpha: float,
+                 lr_beta: float,
                  bias: float = 6.):
         self.__alpha = np.exp(2 * lamb)
         self.__params: Parameters = {
@@ -62,14 +63,15 @@ class GAIStaticAgent(Agent):
             "alpha_t": np.ones(k),
             "beta_t": np.ones(k)
         }
-        self.__lr = lr
+        self.__lr_alpha = lr_alpha
+        self.__lr_beta = lr_beta
         self.__bias = bias
         self.__k = k
 
     def update(self, reward: NDArray[1, Reward], action: NDArray[1, Action]):
         alpha_t, beta_t = self.get_params(["alpha_t", "beta_t"])
-        alpha_t += reward * action * self.__lr
-        beta_t += (1 - reward) * action * self.__lr
+        alpha_t += reward * action * self.__lr_alpha
+        beta_t += (1 - reward) * action * self.__lr_beta
         self.set_params([("alpha_t", alpha_t), ("beta_t", beta_t)])
 
     def predict(self) -> Tuple[NDArray[1, Prediction], NDArray[1, float]]:
@@ -130,7 +132,8 @@ class SAIStaticAgent(Agent):
     def __init__(self,
                  lamb: float,
                  k: NumberOfOptions,
-                 lr: float,
+                 lr_alpha: float,
+                 lr_beta: float,
                  bias: float = 0.):
         self.__lambda = lamb
         self.__params: Parameters = {
@@ -138,14 +141,15 @@ class SAIStaticAgent(Agent):
             "alpha_t": np.ones(k),
             "beta_t": np.ones(k)
         }
-        self.__lr = lr
+        self.__lr_alpha = lr_alpha
+        self.__lr_beta = lr_beta
         self.__bias = bias
         self.__k = k
 
     def update(self, reward: Reward, action: Action):
         alpha_t, beta_t = self.get_params(["alpha_t", "beta_t"])
-        alpha_t += reward * action * self.__lr
-        beta_t += (1 - reward) * action * self.__lr
+        alpha_t += reward * action * self.__lr_alpha
+        beta_t += (1 - reward) * action * self.__lr_beta
         self.set_params([("alpha_t", alpha_t), ("beta_t", beta_t)])
 
     def predict(self) -> Tuple[NDArray[1, Prediction], NDArray[1, Prediction]]:
@@ -201,7 +205,8 @@ class GAIDynamicAgent(Agent):
     def __init__(self,
                  lamb: float,
                  k: NumberOfOptions,
-                 lr: float,
+                 lr_alpha: float,
+                 lr_beta: float,
                  bias: float = 4.):
         self.__params: Parameters = {
             "alpha": np.exp(2 * lamb),
@@ -213,7 +218,8 @@ class GAIDynamicAgent(Agent):
             "b": np.full(k, 20.),
             "omega": np.zeros(k)
         }
-        self.__lr = lr
+        self.__lr_alpha = lr_alpha
+        self.__lr_beta = lr_beta
         self.__bias = bias
         self.__k = k
 
@@ -229,11 +235,11 @@ class GAIDynamicAgent(Agent):
         alpha_t_new = (1 - eta) * alpha_t \
             + eta * alpha_0 \
             + reward
-        alpha_t += (alpha_t_new - alpha_t) * action * self.__lr
+        alpha_t += (alpha_t_new - alpha_t) * action * self.__lr_alpha
         beta_t_new = (1 - eta) * beta_t \
             + eta * beta_0 \
             + (1 - reward)
-        beta_t += (beta_t_new - beta_t) * action * self.__lr
+        beta_t += (beta_t_new - beta_t) * action * self.__lr_beta
         a += omega
         b += 1 - eta - omega
         self.set_params([("alpha_t", alpha_t), ("beta_t", beta_t),
@@ -297,7 +303,8 @@ class SAIDynamicAgent(Agent):
     def __init__(self,
                  lamb: float,
                  k: NumberOfOptions,
-                 lr: float,
+                 lr_alpha: float,
+                 lr_beta: float,
                  bias: float = 0.):
         self.__params: Parameters = {
             "lambda": lamb,
@@ -309,7 +316,8 @@ class SAIDynamicAgent(Agent):
             "b": np.full(k, 20.),
             "omega": np.zeros(k)
         }
-        self.__lr = lr
+        self.__lr_alpha = lr_alpha
+        self.__lr_beta = lr_beta
         self.__bias = bias
         self.__k = k
 
@@ -324,11 +332,11 @@ class SAIDynamicAgent(Agent):
         alpha_t_new = (1 - eta) * alpha_t \
             + eta * alpha_0 \
             + reward
-        alpha_t += (alpha_t_new - alpha_t) * action * self.__lr
+        alpha_t += (alpha_t_new - alpha_t) * action * self.__lr_alpha
         beta_t_new = (1 - eta) * beta_t \
             + eta * beta_0 \
             + (1 - reward)
-        beta_t += (beta_t_new - beta_t) * action * self.__lr
+        beta_t += (beta_t_new - beta_t) * action * self.__lr_beta
         a += omega
         b += 1 - eta - omega
         self.set_params([("alpha_t", alpha_t), ("beta_t", beta_t),

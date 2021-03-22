@@ -13,8 +13,7 @@ SAIAGENT_CLASSES = [m.SAIStaticAgent, m.SAIDynamicAgent]
                                          (3, np.ones(3)), (100, np.ones(100))])
 def test_model_initialize(k, expected):
     for ac in AGENT_CLASSES:
-        agent = ac(1., k, 0.1)
-        agent = m.GAIStaticAgent(1., k, 0.1)
+        agent = ac(1., k, 0.1, 0.1)
         alpha_t, beta_t = agent.get_params(["alpha_t", "beta_t"])
         assert sum(alpha_t == expected)
         assert sum(beta_t == expected)
@@ -39,7 +38,7 @@ def test_model_initialize(k, expected):
 def test_update(rewards, actions, lr, expected_alpha, expected_beta):
     k = 2
     for ac in AGENT_CLASSES:
-        agent: m.Agent = ac(1., k, lr)
+        agent: m.Agent = ac(1., k, lr, lr)
         agent.update(rewards, actions)
         alpha_t, beta_t = agent.get_params(["alpha_t", "beta_t"])
         assert sum(alpha_t == expected_alpha) == k
@@ -82,7 +81,7 @@ def test_predict_gaia(alpha_t, beta_t, expected):
     k = 2
     lr = 0.1
     for ac in GAIAGENT_CLASSES:
-        agent: m.Agent = ac(1., k, lr)
+        agent: m.Agent = ac(1., k, lr, lr)
         agent.set_params([("alpha_t", alpha_t), ("beta_t", beta_t)])
         pragmatic, epistemic = agent.predict()
         preds = pragmatic + epistemic
@@ -126,7 +125,7 @@ def test_predict_saia(alpha_t, beta_t, expected):
     k = 2
     lr = 0.1
     for ac in SAIAGENT_CLASSES:
-        agent: m.Agent = ac(1., k, lr)
+        agent: m.Agent = ac(1., k, lr, lr)
         agent.set_params([("alpha_t", alpha_t), ("beta_t", beta_t)])
         pragmatic, epistemic = agent.predict()
         preds = pragmatic + epistemic
